@@ -1,0 +1,17 @@
+[versions]
+springboot = "4.0.0-M3"
+springdependency = "1.1.6"
+springcloud = "2025.1.0-M3"
+
+[libraries]
+spring-cloud-dependencies = { group = "org.springframework.cloud", name = "spring-cloud-dependencies", version.ref = "springcloud" }
+spring-boot-dependencies = { group = "org.springframework.boot", name = "spring-boot-dependencies", version.ref = "springboot" }
+spring-cloud-eureka-server = { group = "org.springframework.cloud", name = "spring-cloud-starter-netflix-eureka-server" }
+spring-cloud-config-server = { group = "org.springframework.cloud", name = "spring-cloud-config-server" }
+spring-cloud-eureka-client = { group = "org.springframework.cloud", name = "spring-cloud-starter-netflix-eureka-client" }
+spring-boot-starter-web = { group = "org.springframework.boot", name = "spring-boot-starter-web", version.ref = "springboot" }
+spring-boot-starter-security = { group = "org.springframework.boot", name = "spring-boot-starter-security", version.ref = "springboot" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "springboot" }
+spring-dependency = { id = "io.spring.dependency-management", version.ref = "springdependency" }
