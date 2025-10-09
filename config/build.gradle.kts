@@ -13,6 +13,7 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation(libs.spring.cloud.eureka.server)
+    implementation(libs.spring.cloud.config.server)
     implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.security)
 }
