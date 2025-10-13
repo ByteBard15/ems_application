@@ -1,17 +1,36 @@
 [versions]
-springboot = "4.0.0-M3"
+springboot = "3.5.0"
 springdependency = "1.1.6"
-springcloud = "2025.1.0-M3"
+springcloud = "2025.0.0"
+gatewayserver = "4.3.1"
+flyway="11.14.0"
+postgres="42.7.8"
+jwt = "0.13.0"
+assertj = "3.25.3"
 
 [libraries]
 spring-cloud-dependencies = { group = "org.springframework.cloud", name = "spring-cloud-dependencies", version.ref = "springcloud" }
 spring-boot-dependencies = { group = "org.springframework.boot", name = "spring-boot-dependencies", version.ref = "springboot" }
 spring-cloud-eureka-server = { group = "org.springframework.cloud", name = "spring-cloud-starter-netflix-eureka-server" }
 spring-cloud-config-server = { group = "org.springframework.cloud", name = "spring-cloud-config-server" }
+spring-cloud-gateway-server = { group = "org.springframework.cloud", name = "spring-cloud-gateway-server" }
+spring-cloud-loadbalancer = { group = "org.springframework.cloud", name = "spring-cloud-starter-loadbalancer" }
+spring-cloud-starter-config = { group = "org.springframework.cloud", name = "spring-cloud-starter-config" }
 spring-cloud-eureka-client = { group = "org.springframework.cloud", name = "spring-cloud-starter-netflix-eureka-client" }
 spring-boot-starter-web = { group = "org.springframework.boot", name = "spring-boot-starter-web", version.ref = "springboot" }
+spring-boot-starter-webflux = { group = "org.springframework.boot", name = "spring-boot-starter-webflux", version.ref = "springboot" }
 spring-boot-starter-security = { group = "org.springframework.boot", name = "spring-boot-starter-security", version.ref = "springboot" }
+spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test", version.ref = "springboot" }
+oauth2-resource-server = { group = "org.springframework.boot", name = "spring-boot-starter-oauth2-resource-server", version.ref = "springboot" }
+oauth2-authorization-server = { group = "org.springframework.boot", name = "spring-boot-starter-oauth2-authorization-server", version.ref = "springboot" }
+spring-boot-starter-jpa = { group = "org.springframework.boot", name = "spring-boot-starter-data-jpa", version.ref = "springboot" }
+flyway-database = { group = "org.flywaydb", name = "flyway-database-postgresql", version.ref = "flyway" }
+flyway-core = { group = "org.flywaydb", name = "flyway-core", version.ref = "flyway" }
+postgres-core = { group = "org.postgresql", name = "postgresql", version.ref = "postgres" }
+jwt-core = { group = "io.jsonwebtoken", name = "jjwt", version.ref = "jwt" }
+assertj = {group = "org.assertj", name = "assertj-core", version.ref = "assertj"}
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springboot" }
 spring-dependency = { id = "io.spring.dependency-management", version.ref = "springdependency" }
+flyway-core = { id = "org.flywaydb.flyway", version.ref = "flyway" }

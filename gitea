@@ -1,0 +1,42 @@
+#!/bin/bash
+
+USERNAME=${1:-admin}
+PASSWORD=${2:-admin}
+EMAIL=${3:-admin@emp.com}
+REPO="emp_shared_credentials"
+
+echo "Starting Gitea container with user: $USERNAME, email: $EMAIL"
+
+docker run -d --name gitea \
+  -e GITEA__server__DOMAIN=localhost \
+  -e GITEA__server__ROOT_URL=http://localhost:3000/ \
+  -e GITEA__server__HTTP_PORT=3000 \
+  -e GITEA__database__DB_TYPE=sqlite3 \
+  -e GITEA__database__PATH=/data/gitea.db \
+  -p "3001:3000" \
+  gitea/gitea:latest
+
+echo "Waiting for Gitea to start..."
+sleep 10
+
+docker exec -it gitea gitea admin user create \
+  --username "$USERNAME" \
+  --password "$PASSWORD" \
+  --email "$EMAIL" \
+  --admin \
+  --must-change-password=false
+
+curl -s -X POST "http://localhost:3000/api/v1/user/repos" \
+  -u $USERNAME:$PASSWORD \
+  -H "Content-Type: application/json" \
+  -d "{\"name\": \"$REPO\", \"private\": false}"
+
+git clone http://$USERNAME:$PASSWORD@localhost:3000/$USERNAME/$REPO.git
+cd $REPO
+echo "// yaml file for " > credentials.json
+git commit -m "add credentials"
+git push origin master
+
+echo "✅ Gitea setup complete."
+echo "➡️  Visit: http://localhost:3001"
+echo "➡️  Login with: $USERNAME / $PASSWORD"

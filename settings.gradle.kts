@@ -1,4 +1,6 @@
-rootProject.name = "employee_management_system"
+rootProject.name = "emp"
+
+includeBuild("bootstrap")
 
 include(
     ":auth",
@@ -6,4 +8,8 @@ include(
     ":discovery",
     ":gateway",
     ":flyway",
+    ":core:api",
+    ":core:utils",
+    ":core:testing",
+    ":employee",
 )
