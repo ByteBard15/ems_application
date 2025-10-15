@@ -94,7 +94,7 @@ class AuthServiceTest {
         var req = new ChangePasswordRequest("test@mail.com", "oldPass", "TestPass11@");
         authService.changePassword(req);
 
-        assertTrue(encoder.matches("newPass", user.getPassword()));
+        assertTrue(encoder.matches("TestPass11@", user.getPassword()));
         assertEquals(Status.ACTIVE, user.getStatus());
         verify(userRepository).save(user);
     }

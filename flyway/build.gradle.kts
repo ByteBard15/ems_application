@@ -1,8 +1,10 @@
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.flyway.core)
+    base
 }
 
 buildscript {
@@ -45,26 +47,35 @@ tasks.register("create-migration") {
     }
 }
 
+val propsFile = rootProject.file("default.env")
+
 tasks.register("flywayMigrateBuildscript") {
     group = "flyway"
     description = "Run Flyway migrations using JARs on the buildscript classpath (flyway-core, db module, jdbc driver)"
 
     doLast {
-        val url = (project.findProperty("flyway.url") as? String)
-            ?: System.getenv("FLYWAY_URL")
-            ?: "jdbc:postgresql://localhost:5434/emp_db"
+        val props = Properties().apply {
+            if (propsFile.exists()) {
+                load(propsFile.inputStream())
+            } else {
+                throw GradleException("Missing default.properties file")
+            }
+        }
 
-        val user = (project.findProperty("flyway.user") as? String)
-            ?: System.getenv("FLYWAY_USER")
-            ?: "emp_db"
+        val dbHost = props.getProperty("DB_HOST") ?: throw IllegalStateException("DB_HOST is required but not provided")
 
-        val password = (project.findProperty("flyway.password") as? String)
-            ?: System.getenv("FLYWAY_PASSWORD")
-            ?: "emp_db"
+        val dbPort = props.getProperty("DB_PORT") ?: throw IllegalStateException("DB_PORT is required but not provided")
+
+        val dbName = props.getProperty("DB_NAME") ?: throw IllegalStateException("DB_NAME is required but not provided")
+
+        val user = props.getProperty("DB_USERNAME") ?: throw IllegalStateException("DB_USERNAME is required but not provided")
+
+        val password = props.getProperty("spring.datasource.password")
+            ?: System.getenv("DB_PASSWORD")
+            ?: throw IllegalStateException("DB_PASSWORD is required but not provided")
 
         val locations = arrayOf("filesystem:${project.projectDir.path}/migrations")
-
-        println("Running Flyway migrate -> url=$url user=${user.ifBlank { "<empty>" }}")
+        val url = "jdbc:postgresql://$dbHost:$dbPort/$dbName"
 
         val flyway = org.flywaydb.core.Flyway.configure()
             .dataSource(url, user, password)

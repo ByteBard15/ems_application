@@ -1,14 +1,112 @@
-version: "3"
-
+version: "3.9"
 services:
-  gitea:
-    image: gitea/gitea:latest
-    container_name: gitea
+  rabbitmq:
+    image: rabbitmq:4-management
     environment:
-      - GITEA__server__DOMAIN=localhost
-      - GITEA__server__ROOT_URL=http://localhost:3000/
-      - GITEA__server__HTTP_PORT=3000
-      - GITEA__database__DB_TYPE=sqlite3
-      - GITEA__database__PATH=/data/gitea.db
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
     ports:
-      - "3001:3000"
+      - "${RABBITMQ_PORT}:5672"
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672"
+    env_file:
+      - default.env
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  config:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime-config
+    ports:
+      - "${CONFIG_SERVICE_PORT}:${CONFIG_SERVICE_PORT}"
+    env_file:
+      - ./default.env
+    depends_on:
+      - rabbitmq
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://${NETWORK_HOST}:${CONFIG_SERVICE_PORT}/actuator/health" ]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime-auth
+    ports:
+      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
+    env_file:
+      - ./default.env
+    depends_on:
+      discovery:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://${NETWORK_HOST}:${AUTH_SERVICE_PORT}/actuator/health" ]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  employee:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime-employee
+    ports:
+      - "${EMPLOYEE_SERVICE_PORT}:${EMPLOYEE_SERVICE_PORT}"
+    env_file:
+      - ./default.env
+    depends_on:
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://${NETWORK_HOST}:${EMPLOYEE_SERVICE_PORT}/actuator/health" ]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime-gateway
+    ports:
+      - "${GATEWAY_SERVICE_PORT}:${GATEWAY_SERVICE_PORT}"
+    env_file:
+      - ./default.env
+    depends_on:
+      employee:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://${NETWORK_HOST}:${GATEWAY_SERVICE_PORT}/actuator/health" ]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  discovery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime-discovery
+    ports:
+      - "${DISCOVERY_SERVICE_PORT}:${DISCOVERY_SERVICE_PORT}"
+    env_file:
+      - ./default.env
+    depends_on:
+      config:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://${NETWORK_HOST}:${DISCOVERY_SERVICE_PORT}/actuator/health" ]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+

@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -e
+
+REQUIRED_VARS=(DB_NAME DB_USERNAME DB_PASSWORD DB_PORT)
+
+DB_CONTAINER_NAME=emp_db
+
+for var in "${REQUIRED_VARS[@]}"; do
+  if [ -z "${!var}" ]; then
+    echo "❌ Error: Environment variable '$var' is not set."
+    exit 1
+  fi
+done
+
+echo "Starting PostgreSQL container:"
+echo "   Container Name : ${DB_CONTAINER_NAME}"
+echo "   Image          : ${DB_IMAGE}"
+echo "   Database Name  : ${DB_NAME}"
+echo "   User           : ${DB_USERNAME}"
+echo "   Port (host)    : ${DB_PORT}"
+echo ""
+
+if docker ps -a --format '{{.Names}}' | grep -q "^${DB_CONTAINER_NAME}$"; then
+  echo "Container '${DB_CONTAINER_NAME}' already exists. Starting it..."
+  docker start "${DB_CONTAINER_NAME}" >/dev/null
+else
+  echo "Creating new PostgreSQL container '${DB_CONTAINER_NAME}'..."
+  docker run -d \
+    --name "${DB_CONTAINER_NAME}" \
+    -e POSTGRES_DB="${DB_NAME}" \
+    -e POSTGRES_USER="${DB_USERNAME}" \
+    -e POSTGRES_PASSWORD="${DB_PASSWORD}" \
+    -p "${DB_PORT}:5432" \
+    postgres:latest >/dev/null
+fi
+
+echo "⏳ Waiting for PostgreSQL to become ready..."
+until docker exec "${DB_CONTAINER_NAME}" pg_isready -U "${DB_USERNAME}" -d "${DB_NAME}" >/dev/null 2>&1; do
+  sleep 1
+done
+
+echo "✅ PostgreSQL is ready and running at localhost:${DB_PORT}"

@@ -18,7 +18,6 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -89,7 +88,7 @@ public class DepartmentRepositoryTest {
         em.persist(eDept);
         em.persist(mDept);
 
-        departmentRepository.deleteUserDepartments(department.getId());
+        departmentRepository.deleteDepartmentUsers(department.getId());
 
         Long count = ((Number) em.getEntityManager().createNativeQuery(
                         "SELECT COUNT(*) FROM user_departments WHERE department_id = ?1")

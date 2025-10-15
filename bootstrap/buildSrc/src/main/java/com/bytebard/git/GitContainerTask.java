@@ -3,6 +3,7 @@ package com.bytebard.git;
 import com.bytebard.DockerConfig;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
+import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
@@ -105,6 +106,7 @@ public abstract class GitContainerTask extends DefaultTask {
             dockerClient.pullImageCmd(imageName).start();
             var create = dockerClient.createContainerCmd(imageName)
                     .withName(containerName)
+                    .withPortBindings(PortBinding.parse(String.format("%s:%s", hostPort, innerPort)))
                     .exec();
             dockerClient.startContainerCmd(create.getId()).exec();
             getLogger().lifecycle("Container created and started: {}", create.getId());

@@ -154,12 +154,12 @@ class DepartmentServiceTest {
     @Test
     void delete_succeeds_whenExists() {
         when(departmentRepository.existsById(3L)).thenReturn(true);
-        doNothing().when(departmentRepository).deleteUserDepartments(3L);
+        doNothing().when(departmentRepository).deleteDepartmentUsers(3L);
         doNothing().when(departmentRepository).deleteById(3L);
 
         departmentService.delete(3L);
 
-        verify(departmentRepository).deleteUserDepartments(3L);
+        verify(departmentRepository).deleteDepartmentUsers(3L);
         verify(departmentRepository).deleteById(3L);
     }
 

@@ -5,7 +5,7 @@ import com.bytebard.auth.types.ChangePasswordRequest;
 import com.bytebard.auth.types.LoginRequest;
 import com.bytebard.auth.types.LoginResponse;
 import com.bytebard.core.api.constants.Routes;
-import com.bytebard.core.api.types.ApiResponse;
+import com.bytebard.core.api.types.MvcApiReponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,16 +23,16 @@ public class AuthController {
     }
 
     @PostMapping(Routes.LOGIN)
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<MvcApiReponse<LoginResponse>> login(@RequestBody LoginRequest loginRequest) {
         var result = authService.login(loginRequest);
-        var loginResponse = new ApiResponse<>(result, HttpStatus.OK, true);
+        var loginResponse = new MvcApiReponse<>(result, HttpStatus.OK, true);
         return ResponseEntity.ok().body(loginResponse);
     }
 
     @PostMapping(Routes.CHANGE_PASSWORD)
-    public ResponseEntity<ApiResponse<Object>> changePassword(@RequestBody ChangePasswordRequest request) {
+    public ResponseEntity<MvcApiReponse<Object>> changePassword(@RequestBody ChangePasswordRequest request) {
         authService.changePassword(request);
-        var loginResponse = new ApiResponse<>(null, HttpStatus.OK, true);
+        var loginResponse = new MvcApiReponse<>(null, HttpStatus.OK, true);
         return ResponseEntity.ok().body(loginResponse);
     }
 }

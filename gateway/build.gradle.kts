@@ -14,6 +14,8 @@ dependencyManagement {
 
 dependencies {
     implementation(project(":core:messaging"))
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.3.0")
+    implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.cloud.starter.config)
     implementation(libs.spring.cloud.gateway.server)
     implementation(libs.spring.cloud.eureka.client)

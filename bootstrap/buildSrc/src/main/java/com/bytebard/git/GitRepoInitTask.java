@@ -71,7 +71,7 @@ public abstract class GitRepoInitTask extends DefaultTask {
     public void createRepo() {
         OkHttpClient client = new OkHttpClient();
 
-        String url = String.format("http://localhost:%s/api/v1/admin/users/%s/repos", hostPort, username);
+        String url = String.format("http://127.0.0.1:%s/api/v1/admin/users/%s/repos", hostPort, username);
         String json = String.format("{\"name\":\"%s\",\"private\":false}", repoName);
 
         RequestBody body = RequestBody.create(

@@ -37,7 +37,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers(
                                 String.format("%s%s", Routes.AUTH, Routes.LOGIN),
-                                String.format("%s%s", Routes.AUTH, Routes.CHANGE_PASSWORD)
+                                String.format("%s%s", Routes.AUTH, Routes.CHANGE_PASSWORD),
+                                "/actuator/health"
                         )
                         .permitAll()
                         .anyRequest().authenticated()

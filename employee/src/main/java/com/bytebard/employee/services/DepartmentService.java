@@ -4,6 +4,7 @@ import com.bytebard.core.api.models.Department;
 import com.bytebard.core.api.repositories.DepartmentRepository;
 import com.bytebard.employee.types.MutateDepartmentRequest;
 import com.bytebard.employee.types.DepartmentDTO;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -71,12 +72,13 @@ public class DepartmentService {
         return new DepartmentDTO(department.getId(), department.getName());
     }
 
+    @Transactional
     public void delete(Long id) {
         var exists = departmentRepository.existsById(id);
         if (!exists) {
             throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Department not found");
         }
-        departmentRepository.deleteUserDepartments(id);
+        departmentRepository.deleteDepartmentUsers(id);
         departmentRepository.deleteById(id);
     }
 }

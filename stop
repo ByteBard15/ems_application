@@ -1,0 +1,34 @@
+#!/bin/bash
+set -e
+
+MODE=${1:-normal}
+
+echo "Teardown mode: $MODE"
+
+set -a
+source ./default.env
+set +a
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to source default.env"
+    exit 1
+fi
+
+docker-compose down --remove-orphans
+if [ $? -ne 0 ]; then
+    echo "Error: docker-compose down failed"
+    exit 1
+fi
+
+if [ "$MODE" = "full" ]; then
+    echo "Removing local images built by compose (docker-compose down --rmi local was already used above is preferred)"
+
+    echo "Pruning dangling images..."
+    docker image prune -f
+    if [ $? -ne 0 ]; then
+        echo "Warning: docker image prune failed"
+    fi
+
+    echo "Full cleanup complete."
+else
+    echo "Compose services stopped"
+fi

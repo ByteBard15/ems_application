@@ -2,27 +2,27 @@ package com.bytebard.core.api.types;
 
 import org.springframework.http.HttpStatus;
 
-public class ApiResponse<T> {
+public class MvcApiReponse<T> {
 
     private T data;
     private final int status;
     private final boolean success;
     private String message;
 
-    public ApiResponse(T data, HttpStatus status, boolean success) {
+    public MvcApiReponse(T data, HttpStatus status, boolean success) {
         this.data = data;
         this.status = status.value();
         this.success = success;
     }
 
-    public ApiResponse(T data, HttpStatus status, boolean success, String message) {
+    public MvcApiReponse(T data, HttpStatus status, boolean success, String message) {
         this.data = data;
         this.status = status.value();
         this.success = success;
         this.message = message;
     }
 
-    public ApiResponse(HttpStatus status, boolean success, String message) {
+    public MvcApiReponse(HttpStatus status, boolean success, String message) {
         this.status = status.value();
         this.success = success;
         this.message = message;

@@ -6,7 +6,8 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @SpringBootApplication(
         scanBasePackages = {
-                "com.bytebard.core.messaging"
+                "com.bytebard.core.messaging",
+                "com.bytebard.gateway",
         }
 )
 @EnableDiscoveryClient

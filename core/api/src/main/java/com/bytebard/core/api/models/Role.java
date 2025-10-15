@@ -6,9 +6,9 @@ import jakarta.persistence.*;
 @Table(name = "roles")
 public class Role {
 
-    public static final String ADMIN = "role_admin";
-    public static final String MANAGER = "role_manager";
-    public static final String EMPLOYEE = "role_employee";
+    public static final String ADMIN = "ADMIN";
+    public static final String MANAGER = "MANAGER";
+    public static final String EMPLOYEE = "EMPLOYEE";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

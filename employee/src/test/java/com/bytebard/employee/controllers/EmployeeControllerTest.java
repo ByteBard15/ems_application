@@ -75,7 +75,7 @@ class EmployeeControllerTest {
     @Test
     void getAllEndpoint_returnsOk() throws Exception {
         when(employeeService.getAllUsers(any(), any())).thenReturn(null);
-        var url = Routes.DEPARTMENTS + "?page=0&size=10";
+        var url = Routes.USERS + "?page=0&size=10";
 
         mockMvc.perform(get(url))
                 .andExpect(status().isOk());

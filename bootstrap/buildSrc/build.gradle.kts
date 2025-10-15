@@ -1,6 +1,5 @@
 plugins {
     `java-library`
-    `kotlin-dsl`
 }
 
 repositories {
@@ -8,7 +7,6 @@ repositories {
 }
 
 dependencies {
-    implementation(gradleApi())
     implementation("com.github.docker-java:docker-java-core:3.3.5")
     implementation("com.github.docker-java:docker-java-transport-httpclient5:3.3.5")
     implementation("org.eclipse.jgit:org.eclipse.jgit:6.10.0.202406032230-r")

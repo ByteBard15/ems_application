@@ -7,8 +7,8 @@ import com.bytebard.core.api.models.User;
 import com.bytebard.core.api.repositories.DepartmentRepository;
 import com.bytebard.core.api.repositories.RoleRepository;
 import com.bytebard.core.api.repositories.UserRepository;
-import com.bytebard.employee.types.MutateUserRequest;
 import com.bytebard.core.messaging.producer.UserEventsProducer;
+import com.bytebard.employee.types.MutateUserRequest;
 import com.bytebard.utils.DateUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-class EmployeeServiceTest {
+public class EmployeeServiceTest {
 
     @Mock
     private UserRepository userRepository;
@@ -75,20 +75,32 @@ class EmployeeServiceTest {
         req.setLastName("Doe");
         req.setEmail("test@email.com");
         req.setRole(Role.ADMIN);
+        req.setDepartmentId(1L);
 
         var role = new Role(Role.ADMIN);
+        role.setId(2L);
         when(roleRepository.findByName(Role.ADMIN)).thenReturn(Optional.of(role));
+        when(userRepository.existsByEmail(req.getEmail())).thenReturn(false);
+        when(departmentRepository.existsById(1L)).thenReturn(true);
 
-        var saved = new User("John", "Doe", passwordEncoder.encode("DefaultPwd123!"), "test@email.com", Status.INACTIVE, DateUtils.now(), Set.of(role));
+        var saved = new User("John", "Doe", passwordEncoder.encode("DefaultPwd123!"), req.getEmail(), Status.INACTIVE, DateUtils.now(), Set.of(role));
         saved.setId(42L);
         when(userRepository.save(any(User.class))).thenReturn(saved);
+
+        doNothing().when(userRepository).insertUserRole(42L, role.getId());
+        doNothing().when(departmentRepository).insertUserDepartments(42L, 1L);
+        doNothing().when(producer).sendUserCreatedEvent(42L);
 
         var dto = employeeService.create(req);
 
         assertNotNull(dto);
         assertEquals(42L, dto.getId());
-        assertEquals("test@email.com", dto.getEmail());
+        assertEquals(req.getEmail(), dto.getEmail());
+
         verify(userRepository).save(any(User.class));
+        verify(userRepository).insertUserRole(eq(42L), eq(role.getId()));
+        verify(departmentRepository).insertUserDepartments(eq(42L), eq(1L));
+        verify(producer).sendUserCreatedEvent(eq(42L));
     }
 
     @Test
@@ -98,6 +110,7 @@ class EmployeeServiceTest {
         req.setLastName("Doe");
         req.setEmail("not-an-email");
         req.setRole(Role.ADMIN);
+        req.setDepartmentId(1L);
 
         var ex = assertThrows(HttpClientErrorException.class, () -> employeeService.create(req));
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
@@ -110,17 +123,25 @@ class EmployeeServiceTest {
         req.setLastName("Doe");
         req.setEmail("jane.doe@example.com");
         req.setRole(Role.EMPLOYEE);
+        req.setDepartmentId(5L);
 
         var role = new Role(Role.EMPLOYEE);
+        role.setId(3L);
         when(roleRepository.findByName(Role.EMPLOYEE)).thenReturn(Optional.of(role));
 
         var existing = new User("Old", "Name", "pw", "old@example.com", Status.ACTIVE, DateUtils.now(), Set.of(role));
         existing.setId(11L);
         when(userRepository.findById(11L)).thenReturn(Optional.of(existing));
 
+        when(departmentRepository.existsByDepartmentAndUser(11L, 5L)).thenReturn(false);
+        when(departmentRepository.existsById(5L)).thenReturn(true);
+
         var saved = new User("Jane", "Doe", "pw2", "jane.doe@example.com", Status.ACTIVE, DateUtils.now(), Set.of(role));
         saved.setId(11L);
         when(userRepository.save(any(User.class))).thenReturn(saved);
+
+        doNothing().when(departmentRepository).deleteDepartmentUsers(11L);
+        doNothing().when(departmentRepository).insertUserDepartments(11L, 5L);
 
         var dto = employeeService.update(11L, req);
 
@@ -128,6 +149,8 @@ class EmployeeServiceTest {
         assertEquals(11L, dto.getId());
         assertEquals("jane.doe@example.com", dto.getEmail());
         verify(userRepository).save(any(User.class));
+        verify(departmentRepository).deleteDepartmentUsers(11L);
+        verify(departmentRepository).insertUserDepartments(11L, 5L);
     }
 
     @Test
@@ -140,6 +163,7 @@ class EmployeeServiceTest {
         req.setLastName("Y");
         req.setEmail("x@y.com");
         req.setRole(Role.EMPLOYEE);
+        req.setDepartmentId(1L);
 
         var ex = assertThrows(HttpClientErrorException.class, () -> employeeService.update(999L, req));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
@@ -152,6 +176,7 @@ class EmployeeServiceTest {
         req.setLastName("Doe");
         req.setEmail("jane.doe@example.com");
         req.setRole("UNKNOWN_ROLE");
+        req.setDepartmentId(1L);
 
         when(roleRepository.findByName("UNKNOWN_ROLE")).thenReturn(Optional.empty());
 
@@ -168,8 +193,10 @@ class EmployeeServiceTest {
         req.setLastName("Doe");
         req.setEmail("new@example.com");
         req.setRole(Role.EMPLOYEE);
+        req.setDepartmentId(2L);
 
         var role = new Role(Role.EMPLOYEE);
+        role.setId(7L);
         var existing = new User("Old", "Name", "pw", "old@example.com", Status.ACTIVE, DateUtils.now(), Set.of(role));
         existing.setId(20L);
 
@@ -190,6 +217,7 @@ class EmployeeServiceTest {
         req.setLastName("Doe");
         req.setEmail("invalid-email");
         req.setRole(Role.EMPLOYEE);
+        req.setDepartmentId(1L);
 
         var ex = assertThrows(HttpClientErrorException.class, () -> employeeService.update(1L, req));
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
@@ -303,3 +331,4 @@ class EmployeeServiceTest {
         assertEquals(1, dtos.size());
     }
 }
+

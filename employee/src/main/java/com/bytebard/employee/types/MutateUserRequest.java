@@ -6,6 +6,7 @@ public class MutateUserRequest {
     private String firstName;
     private String lastName;
     private String role;
+    private Long departmentId;
 
     public String getEmail() {
         return email;
@@ -37,5 +38,13 @@ public class MutateUserRequest {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public Long getDepartmentId() {
+        return departmentId;
+    }
+
+    public void setDepartmentId(Long departmentId) {
+        this.departmentId = departmentId;
     }
 }

@@ -39,15 +39,31 @@ public class SecurityConfig {
                 .sessionManagement(customizer -> customizer.sessionCreationPolicy(SessionCreationPolicy.NEVER))
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers(String.format("%s%s/**", Routes.API_V1, Routes.DEPARTMENTS)).hasRole(Role.ADMIN)
-                        .requestMatchers(HttpMethod.POST, String.format("%s%s", Routes.API_V1, Routes.USERS)).hasRole(Role.ADMIN)
-                        .requestMatchers(HttpMethod.PUT, String.format("%s%s", Routes.API_V1, Routes.USERS)).hasRole(Role.ADMIN)
-                        .requestMatchers(HttpMethod.DELETE, String.format("%s%s", Routes.API_V1, Routes.USERS)).hasRole(Role.ADMIN)
-                        .requestMatchers(HttpMethod.GET, String.format("%s%s", Routes.API_V1, Routes.USERS)).hasAnyRole(Role.ADMIN, Role.MANAGER)
-//                        .requestMatchers(HttpMethod.GET, String.format("%s%s/**", Routes.API_V1, Routes.USERS)).hasAnyRole(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+                        .requestMatchers("/actuator/health")
+                        .permitAll()
+
+                        .requestMatchers(String.format("%s/**", Routes.DEPARTMENTS))
+                        .hasRole(Role.ADMIN)
+
+                        .requestMatchers(HttpMethod.GET, String.format("%s", Routes.USERS))
+                        .hasAnyRole(Role.ADMIN, Role.MANAGER)
+
+                        .requestMatchers(HttpMethod.GET, String.format("%s/**", Routes.USERS))
+                        .hasAnyRole(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
+
+                        .requestMatchers(HttpMethod.POST, String.format("%s", Routes.USERS))
+                        .hasRole(Role.ADMIN)
+
+                        .requestMatchers(HttpMethod.PUT, String.format("%s/**", Routes.USERS))
+                        .hasRole(Role.ADMIN)
+
+                        .requestMatchers(HttpMethod.DELETE, String.format("%s/**", Routes.USERS))
+                        .hasRole(Role.ADMIN)
+
                         .anyRequest()
                         .authenticated()
-                ).exceptionHandling(e -> e
+                )
+                .exceptionHandling(e -> e
                         .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(deniedHandler)
                 );

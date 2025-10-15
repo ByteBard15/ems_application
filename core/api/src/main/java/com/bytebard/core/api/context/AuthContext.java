@@ -31,7 +31,10 @@ public class AuthContext {
     }
 
     public void setContextProps(User user, String token) {
-        List<SimpleGrantedAuthority> roles = user.getRoles().stream().map((role) -> new SimpleGrantedAuthority(role.getName())).toList();
+        List<SimpleGrantedAuthority> roles = user.getRoles()
+                .stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+                .toList();
         var authentication = new JwtAuthenticationToken(user, token, roles, true);
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }

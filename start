@@ -1,0 +1,47 @@
+#!/bin/bash
+
+set -e
+
+#./gradlew test
+
+./gradlew --include-build bootstrap :bootstrap:createGitConfig --info -PuseEnv=true -PciHost="127.0.0.1" -PliveHost="172.17.0.1"
+if [ $? -ne 0 ]; then
+    echo "Error: Gradle task :bootstrap:createGitConfig failed"
+    exit 1
+fi
+
+set -a
+source ./default.env
+set +a
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to source default.env"
+    exit 1
+fi
+
+./flyway/create
+if [ $? -ne 0 ]; then
+    echo "Error: Flyway create failed"
+    exit 1
+fi
+
+./flyway/migrate
+if [ $? -ne 0 ]; then
+    echo "Error: Flyway migrate failed"
+    exit 1
+fi
+
+./gradlew clean buildSelectedJars --info --stacktrace
+
+docker-compose --verbose build
+if [ $? -ne 0 ]; then
+    echo "Error: Docker Compose build failed"
+    exit 1
+fi
+
+docker-compose --verbose up
+if [ $? -ne 0 ]; then
+    echo "Error: Docker Compose up failed"
+    exit 1
+fi
+
+echo "Script completed successfully"

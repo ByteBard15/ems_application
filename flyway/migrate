@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+./gradlew :flyway:flywayMigrateBuildscript --no-daemon
+
+echo "Migration completed successfully."
+
+if [ "$1" == "--clean" ]; then
+  echo "🧹 Stopping and removing PostgreSQL container..."
+  docker stop $DB_CONTAINER_NAME >/dev/null
+  docker rm $DB_CONTAINER_NAME >/dev/null
+  echo "Cleanup done."
+fi

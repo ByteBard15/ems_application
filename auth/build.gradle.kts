@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.spring.cloud.starter.config)
     testImplementation(libs.spring.security.test)
     testImplementation(libs.spring.boot.starter.test)
+    implementation(libs.spring.boot.starter.actuator)
 }
 
 tasks.test {

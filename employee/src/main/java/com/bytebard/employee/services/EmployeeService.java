@@ -13,6 +13,7 @@ import com.bytebard.core.api.validators.FieldValidator;
 import com.bytebard.employee.types.MutateUserRequest;
 import com.bytebard.core.messaging.producer.UserEventsProducer;
 import com.bytebard.utils.DateUtils;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,7 +25,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -68,8 +68,13 @@ public class EmployeeService {
         if (!StringUtils.hasText(request.getRole()) || !List.of(Role.EMPLOYEE, Role.ADMIN, Role.MANAGER).contains(request.getRole())) {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Invalid user type");
         }
+
+        if (request.getDepartmentId() == null) {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Department id cannot be empty");
+        }
     }
 
+    @Transactional
     public UserDTO create(MutateUserRequest request) {
         validateCreateUserRequest(request);
         var role = roleRepository.findByName(request.getRole());
@@ -82,27 +87,29 @@ public class EmployeeService {
             throw new HttpClientErrorException(HttpStatus.CONFLICT, "Email already exists");
         }
 
+        exists = departmentRepository.existsById(request.getDepartmentId());
+        if (!exists) {
+            throw new HttpClientErrorException(HttpStatus.CONFLICT, "Department does not exist");
+        }
+
         User user = new User(
                 request.getFirstName(),
                 request.getLastName(),
                 passwordEncoder.encode(defaultPassword),
                 request.getEmail(),
                 Status.INACTIVE,
-                DateUtils.now(),
-                Set.of(role.get())
+                DateUtils.now()
         );
         user = userRepository.save(user);
+        userRepository.insertUserRole(user.getId(), role.get().getId());
+        departmentRepository.insertUserDepartments(user.getId(), request.getDepartmentId());
         producer.sendUserCreatedEvent(user.getId());
         return UserMapper.toUserDTO(user);
     }
 
+    @Transactional
     public UserDTO update(Long id, MutateUserRequest request) {
         validateCreateUserRequest(request);
-        var role = roleRepository.findByName(request.getRole());
-        if (role.isEmpty()) {
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Invalid user type");
-        }
-
         User user = userRepository.findById(id).orElseThrow(() -> new HttpClientErrorException(HttpStatus.NOT_FOUND, "User not found."));
 
         if (!request.getEmail().equals(user.getEmail())) {
@@ -116,10 +123,20 @@ public class EmployeeService {
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
 
+        var exists = departmentRepository.existsByDepartmentAndUser(user.getId(), request.getDepartmentId());
+        if (!exists) {
+            var deptExists = departmentRepository.existsById(request.getDepartmentId());
+            if (!deptExists) {
+                throw new HttpClientErrorException(HttpStatus.CONFLICT, "Department does not exist");
+            }
+            departmentRepository.deleteDepartmentUsers(user.getId());
+            departmentRepository.insertUserDepartments(user.getId(), request.getDepartmentId());
+        }
         user = userRepository.save(user);
         return UserMapper.toUserDTO(user);
     }
 
+    @Transactional
     public void delete(Long id) {
         var exists = userRepository.existsById(id);
         if (!exists) {

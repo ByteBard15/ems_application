@@ -24,6 +24,8 @@ public abstract class GitConfigTask extends DefaultTask {
 
     private String repoName;
 
+    private String networkHost;
+
     @Input
     public String getUsername() {
         return username;
@@ -58,6 +60,15 @@ public abstract class GitConfigTask extends DefaultTask {
 
     public void setRepoName(String repoName) {
         this.repoName = repoName;
+    }
+
+    public void setNetworkHost(String networkHost) {
+        this.networkHost = networkHost;
+    }
+
+    @Input
+    public String getNetworkHost() {
+        return networkHost;
     }
 
     private Properties properties;
@@ -100,20 +111,20 @@ public abstract class GitConfigTask extends DefaultTask {
             }
 
             UsernamePasswordCredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, password);
-            getLogger().lifecycle("Cloning empty repo from http://localhost:" + hostPort + "/" + username + "/" + repoName + ".git using JGit ...");
+            getLogger().lifecycle("Cloning empty repo from http://" + networkHost + ":" + hostPort + "/" + username + "/" + repoName + ".git using JGit ...");
 
-            Git git = Git.cloneRepository()
-                    .setURI("http://localhost:" + hostPort + "/" + username + "/" + repoName + ".git")
+            try (Git git = Git.cloneRepository()
+                    .setURI("http://" + networkHost + ":" + hostPort + "/" + username + "/" + repoName + ".git")
                     .setDirectory(localDir)
                     .setCredentialsProvider(cp)
-                    .call();
+                    .call()) {
+                writeYamlConfigs(localDir, props);
 
-            writeYamlConfigs(localDir, props);
-
-            git.add().addFilepattern(".").call();
-            PersonIdent author = new PersonIdent("automation", "automation@local");
-            git.commit().setMessage("Add config YAMLs").setAuthor(author).call();
-            git.push().setCredentialsProvider(cp).call();
+                git.add().addFilepattern(".").call();
+                PersonIdent author = new PersonIdent("automation", "automation@local");
+                git.commit().setMessage("Add config YAMLs").setAuthor(author).call();
+                git.push().setCredentialsProvider(cp).call();
+            }
 
             getLogger().lifecycle("Local repo initialized and pushed.");
 
@@ -126,7 +137,7 @@ public abstract class GitConfigTask extends DefaultTask {
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed during repo init / config push", e);
+            throw new RuntimeException("Failed during repo init / config push: "+ e.getMessage(), e);
         }
     }
 
@@ -224,7 +235,14 @@ public abstract class GitConfigTask extends DefaultTask {
         );
 
         auth.put("spring", spring);
-        auth.put("eureka", Map.of("client", Map.of("service-url", Map.of("defaultZone", m.getOrDefault("DISCOVERY_SERVICE_URL", "http://localhost:8761/eureka/")))));
+        auth.put("eureka", Map.of(
+                "client",
+                Map.of(
+                        "service-url",
+                        Map.of("defaultZone",
+                                m.getOrDefault("DISCOVERY_SERVICE_URL", "")))
+                )
+        );
 
         writeYamlFile(dir, "auth-service.yml", yaml, auth);
     }
@@ -234,49 +252,91 @@ public abstract class GitConfigTask extends DefaultTask {
 
         root.put("server", Map.of("port", Integer.parseInt(m.getOrDefault("GATEWAY_SERVICE_PORT", "8080"))));
 
-        Map<String, Object> spring = new LinkedHashMap<>();
-        spring.put("application", Map.of("name", "gateway-service"));
-        spring.put("main", Map.of("web-application-type", "reactive"));
-
-        List<Map<String, Object>> routes = List.of(
-                Map.of(
-                        "predicates", List.of("Path=/api/v1/users/**"),
-                        "uri", "lb://employee-service",
-                        "id", "users"
-                ),
-                Map.of(
-                        "predicates", List.of("Path=/api/v1/departments/**"),
-                        "uri", "lb://employee-service",
-                        "id", "departments"
-                ),
-                Map.of(
-                        "predicates", List.of("Path=/api/v1/auth/**"),
-                        "uri", "lb://auth-service",
-                        "id", "auth"
-                )
-        );
-
-        Map<String, Object> webflux = Map.of("routes", routes);
-        Map<String, Object> serverUnderGateway = Map.of("webflux", webflux);
-        Map<String, Object> gateway = new LinkedHashMap<>();
-        gateway.put("server", serverUnderGateway);
-
-        gateway.put("discovery", Map.of("locator", Map.of("enabled", true, "lower-case-service-id", true)));
-
-        Map<String, Object> cloud = Map.of("gateway", gateway);
-        spring.put("cloud", cloud);
-
-        root.put("spring", spring);
-
         root.put("eureka", Map.of(
                 "client", Map.of(
-                        "service-url", Map.of("defaultZone", "http://localhost:8761/eureka/")
+                        "service-url", Map.of("defaultZone", m.getOrDefault("DISCOVERY_SERVICE_URL", "http://172.17.0.1:8761/eureka"))
+                )
+        ));
+
+        root.put("springdoc", Map.of(
+                "api-docs", Map.of(
+                        "enabled", true,
+                        "path", "/v3/api-docs"
+                ),
+                "swagger-ui", Map.of(
+                        "enabled", true,
+                        "path", "/swagger-ui.html",
+                        "url", "/v3/api-docs"
                 )
         ));
 
         root.put("management", Map.of(
-                "endpoint", Map.of("gateway", Map.of("access", "unrestricted"))
+                "endpoints", Map.of(
+                        "web", Map.of(
+                                "exposure", Map.of(
+                                        "include", "gateway,health,info"
+                                )
+                        )
+                )
         ));
+
+        Map<String, Object> spring = new LinkedHashMap<>();
+        spring.put("application", Map.of("name", "gateway-service"));
+        spring.put("main", Map.of("web-application-type", "reactive"));
+        spring.put("webflux", Map.of(
+                "static-path-pattern", "/static/**"
+        ));
+        spring.put("web", Map.of(
+                "resources", Map.of(
+                        "static-locations", List.of(
+                                "classpath:/static/",
+                                "classpath:/docs/",
+                                "classpath:/public/"
+                        )
+                )
+        ));
+
+        List<Map<String, Object>> routes = List.of(
+                Map.of(
+                        "id", "users",
+                        "uri", "lb://employee-service",
+                        "predicates", List.of("Path=/api/v1/users/**")
+                ),
+                Map.of(
+                        "id", "departments",
+                        "uri", "lb://employee-service",
+                        "predicates", List.of("Path=/api/v1/departments/**")
+                ),
+                Map.of(
+                        "id", "auth",
+                        "uri", "lb://auth-service",
+                        "predicates", List.of("Path=/api/v1/auth/**")
+                ),
+                Map.of(
+                        "id", "swagger-ui",
+                        "uri", "forward:/",
+                        "predicates", List.of("Path=/swagger-ui.html,/swagger-ui/**,/webjars/**"),
+                        "filters", List.of("RewritePath=/swagger-ui/(?<segment>.*),/swagger-ui/${segment}")
+                ),
+                Map.of(
+                        "id", "api-docs",
+                        "uri", "forward:/",
+                        "predicates", List.of("Path=/v3/api-docs,/v3/api-docs/**")
+                )
+        );
+
+        Map<String, Object> serverUnderGateway = Map.of("webflux", Map.of("routes", routes));
+        Map<String, Object> gateway = new LinkedHashMap<>();
+        gateway.put("server", serverUnderGateway);
+        gateway.put("discovery", Map.of(
+                "locator", Map.of(
+                        "enabled", true,
+                        "lower-case-service-id", true
+                )
+        ));
+
+        spring.put("cloud", Map.of("gateway", gateway));
+        root.put("spring", spring);
 
         writeYamlFile(dir, "gateway-service.yml", yaml, root);
     }
@@ -315,7 +375,7 @@ public abstract class GitConfigTask extends DefaultTask {
         );
 
         emp.put("spring", spring);
-        emp.put("eureka", Map.of("client", Map.of("service-url", Map.of("defaultZone", "http://localhost:8761/eureka/"))));
+        emp.put("eureka", Map.of("client", Map.of("service-url", Map.of("defaultZone", m.get("DISCOVERY_SERVICE_URL")))));
 
         writeYamlFile(dir, "employee-service.yml", yaml, emp);
     }
