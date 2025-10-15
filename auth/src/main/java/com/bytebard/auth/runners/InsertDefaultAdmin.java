@@ -6,6 +6,7 @@ import com.bytebard.core.api.models.User;
 import com.bytebard.core.api.repositories.RoleRepository;
 import com.bytebard.core.api.repositories.UserRepository;
 import com.bytebard.utils.DateUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,9 @@ public class InsertDefaultAdmin implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${spring.auth.default-password:defaultPassword}")
+    private String defaultPassword;
 
     public InsertDefaultAdmin(RoleRepository roleRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.roleRepository = roleRepository;
@@ -31,7 +35,7 @@ public class InsertDefaultAdmin implements CommandLineRunner {
             return;
         }
         User user = new User(
-                "admin", "admin", passwordEncoder.encode("admin"), "admin@emp.com", Status.ACTIVE, DateUtils.now(), null
+                "admin", "admin", passwordEncoder.encode(defaultPassword), "admin@emp.com", Status.ACTIVE, DateUtils.now(), null
         );
         user = userRepository.save(user);
         var findRole = roleRepository.findByName(Role.ADMIN);

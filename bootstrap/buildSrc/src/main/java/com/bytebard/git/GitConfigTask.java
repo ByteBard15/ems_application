@@ -231,7 +231,8 @@ public abstract class GitConfigTask extends DefaultTask {
                         "secret", m.get("JWT_SECRET"),
                         "expiry-in-hours", m.get("JWT_EXPIRATION_IN_HOURS"),
                         "issuer", m.get("JWT_ISSUER")
-                )
+                ),
+                "auth", Map.of("default-password", m.get("DEFAULT_PASSWORD"))
         );
 
         auth.put("spring", spring);

@@ -31,7 +31,7 @@ public class PropertyUtils {
         p.setProperty("EMPLOYEE_SERVICE_PORT", "8082");
         p.setProperty("CONFIG_SERVICE_PORT", "8888");
         p.setProperty("DISCOVERY_SERVICE_PORT", "8761");
-        p.setProperty("DEFAULT_PASSWORD", "default123");
+        p.setProperty("DEFAULT_PASSWORD", "defaultPassword");
 
         p.setProperty("RABBITMQ_HOST", networkHost);
         p.setProperty("RABBITMQ_PORT", "5672");

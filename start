@@ -2,7 +2,7 @@
 
 set -e
 
-#./gradlew test
+./gradlew test
 
 ./gradlew --include-build bootstrap :bootstrap:createGitConfig --info -PuseEnv=true -PciHost="127.0.0.1" -PliveHost="172.17.0.1"
 if [ $? -ne 0 ]; then

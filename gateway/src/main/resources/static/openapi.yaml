@@ -356,6 +356,8 @@ components:
           type: string
         role:
           type: string
+        departmentId:
+          type: number
       required:
         - email
         - firstName
