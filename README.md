@@ -30,7 +30,7 @@ In total, **8 containers** are created and orchestrated via Docker Compose.
 
 ---
 
-## 🧪 Continuous Integration (CI)
+## Continuous Integration (CI)
 
 The CI workflow runs the following stages:
 
@@ -41,7 +41,7 @@ The first container to start is the **Gogs Git repository**, which mimics a priv
 
 ---
 
-## 🏗️ Bootstrapping the Shared Config Repository
+## Bootstrapping the Shared Config Repository
 
 The shared configuration repository is created using the following Gradle properties (default values shown):
 
@@ -69,7 +69,7 @@ You can override these defaults in the start script or by running this command w
 
 ---
 
-## 🌍 Environment Configuration
+## Environment Configuration
 
 After the Git container is initialized, a **`default.env`** file is created in the project root.
 This file defines all runtime environment variables used by the services (databases, ports, RabbitMQ, JWT secrets, etc.).
@@ -80,7 +80,7 @@ This file defines all runtime environment variables used by the services (databa
 
 ---
 
-## 🗃️ Database Setup
+## Database Setup
 This is not really necessary if you run the start script.
 
 1. **Create Database**
@@ -99,7 +99,7 @@ The scripts will create the database using the credentials in `default.env` and 
 
 ---
 
-## 🧱 Building the Application
+## Building the Application
 After database setup, Gradle builds all modules and packages them as executable shadow JARs:
 Note: This command is not also necessary if the start script is ran.
 ```bash
@@ -110,7 +110,7 @@ You can disable full stack traces by removing the `--stacktrace` or `--info` fla
 
 ---
 
-## 🐳 Docker Compose Deployment
+## Docker Compose Deployment
 
 Once JARs are built, the Docker Compose file orchestrates container creation in the following order:
 
@@ -127,7 +127,7 @@ The **Gateway Service** exposes port **`8080`** by default for external access.
 
 ---
 
-## ⚙️ Automation & CI/CD
+## Automation & CI/CD
 
 Two GitHub Actions files are included in the project to automate:
 
@@ -155,15 +155,15 @@ These scripts allow you to run or tear down the entire stack without executing e
 
 ---
 
-## 🌐 Accessing the Application
+## Accessing the Application
 
-### 🧭 API Gateway
+### API Gateway
 
 ```
 http://localhost:8080
 ```
 
-### 📘 Swagger UI (API Documentation)
+### Swagger UI (API Documentation)
 
 ```
 http://localhost:8080/webjars/swagger-ui/index.html#/default/login
@@ -171,7 +171,7 @@ http://localhost:8080/webjars/swagger-ui/index.html#/default/login
 
 ---
 
-## 👥 Default Accounts & Authentication Flow
+## Default Accounts & Authentication Flow
 
 When the system starts, a **default admin user** is automatically created and activated.
 
@@ -191,14 +191,14 @@ These are defined in the `default.env` file:
 DEFAULT_PASSWORD=<your_default_password>
 ```
 
-Users are created with this default password and are required to **change it upon first login**.
+Users are created with this default password and are required to **change it before login**.
 
 > In production, this password would be randomly generated and sent via email.
 > For simplicity, a static password is used in this setup.
 
 ---
 
-## 🔄 Typical Lifecycle Summary
+## Typical Lifecycle Summary
 
 1. Run tests for all modules.
 2. Create and initialize the Gogs shared config container.
@@ -211,7 +211,7 @@ Users are created with this default password and are required to **change it upo
 
 ---
 
-## 🧰 Useful Commands
+## Useful Commands
 
 | Command                                                          | Description                              |
 | ---------------------------------------------------------------- | ---------------------------------------- |
@@ -228,7 +228,7 @@ Users are created with this default password and are required to **change it upo
 
 ---
 
-## 🧩 Tech Stack
+## Tech Stack
 
 * **Spring Boot (Multi-Module Architecture)**
 * **Spring Cloud Config**
@@ -243,7 +243,7 @@ Users are created with this default password and are required to **change it upo
 
 ---
 
-## 📜 License
+## License
 
 This project is provided for educational and demonstration purposes.
 You’re free to modify and extend it for your own use.
