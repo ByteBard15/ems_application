@@ -9,6 +9,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +38,7 @@ public class DefaultExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    @ExceptionHandler({NotFoundException.class, UsernameNotFoundException.class})
-    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler({NotFoundException.class, UsernameNotFoundException.class, EntityNotFoundException.class, NoResourceFoundException.class})
     public ResponseEntity<ApiResponse<Object>> handleNotFoundExceptions(Exception ex) {
         HttpStatus status = HttpStatus.NOT_FOUND;
         ApiResponse<Object> response = new ApiResponse<>(HttpStatus.NOT_FOUND, false, ex.getMessage());
@@ -48,7 +49,7 @@ public class DefaultExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleClientException(Exception ex) {
         if (ex instanceof HttpClientErrorException clientEx) {
             var status = HttpStatus.valueOf(clientEx.getStatusCode().value());
-            ApiResponse<Object> response = new ApiResponse<>(status, false, ex.getMessage());
+            ApiResponse<Object> response = new ApiResponse<>(status, false, clientEx.getStatusText());
             return ResponseEntity.status(status).body(response);
         }
         HttpStatus status = HttpStatus.BAD_REQUEST;
@@ -69,19 +70,13 @@ public class DefaultExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleNotFound(EntityNotFoundException ex) {
-        ApiResponse<Object> response = new ApiResponse<>(HttpStatus.NOT_FOUND, false, ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-    }
-
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Object>> handleConflict(DataIntegrityViolationException ex) {
         ApiResponse<Object> response = new ApiResponse<>(HttpStatus.CONFLICT, false, "Conflict: " + ex.getMostSpecificCause().getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
-    @ExceptionHandler({AuthorizationDeniedException.class, AccessDeniedException.class})
+    @ExceptionHandler({AuthorizationDeniedException.class, AccessDeniedException.class, AuthenticationCredentialsNotFoundException.class})
     public ResponseEntity<ApiResponse<Object>> handleUnauthorized(Exception ex) {
         ApiResponse<Object> response = new ApiResponse<>(HttpStatus.UNAUTHORIZED, false, ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);

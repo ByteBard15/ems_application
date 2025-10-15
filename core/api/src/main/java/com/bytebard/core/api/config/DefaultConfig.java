@@ -1,7 +1,7 @@
 package com.bytebard.core.api.config;
 
 import com.bytebard.core.api.context.AuthContext;
-import com.bytebard.core.api.filters.JwtAuthFilter;
+import com.bytebard.core.api.filters.TokenAuthFilter;
 import com.bytebard.core.api.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import javax.crypto.SecretKey;
@@ -42,9 +43,9 @@ public class DefaultConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public JwtAuthFilter authFilter(JwtConfig config, AuthContext ctx, UserRepository repository, @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
-        return new JwtAuthFilter(config, ctx, repository, exceptionResolver);
+    @Bean("tokenAuthFilter")
+    public OncePerRequestFilter authFilter(TokenAuthConfig config, AuthContext ctx, UserRepository repository, @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
+        return new TokenAuthFilter(config, ctx, repository, exceptionResolver);
     }
 
     @Bean

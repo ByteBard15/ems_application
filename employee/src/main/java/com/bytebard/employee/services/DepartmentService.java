@@ -45,6 +45,11 @@ public class DepartmentService {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Department name must be at least 3 characters");
         }
 
+        var exists = departmentRepository.existsByName(request.getName());
+        if (exists) {
+            throw new HttpClientErrorException(HttpStatus.CONFLICT, "Department name already exists");
+        }
+
         var department = new Department(null, request.getName());
         department = departmentRepository.save(department);
         return new DepartmentDTO(department.getId(), department.getName());
@@ -53,6 +58,11 @@ public class DepartmentService {
     public DepartmentDTO update(Long id, MutateDepartmentRequest request) {
         if (!StringUtils.hasText(request.getName()) || request.getName().length() < 3) {
             throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Department name must be at least 3 characters");
+        }
+
+        var exists = departmentRepository.existsByName(request.getName(), id);
+        if (exists) {
+            throw new HttpClientErrorException(HttpStatus.CONFLICT, "Department name already exists");
         }
 
         var department = departmentRepository.findById(id).orElseThrow(() -> new HttpClientErrorException(HttpStatus.NOT_FOUND, "Department not found"));

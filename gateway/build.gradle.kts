@@ -13,6 +13,7 @@ dependencyManagement {
 }
 
 dependencies {
+    implementation(project(":core:messaging"))
     implementation(libs.spring.cloud.starter.config)
     implementation(libs.spring.cloud.gateway.server)
     implementation(libs.spring.cloud.eureka.client)

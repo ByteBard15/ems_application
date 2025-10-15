@@ -6,20 +6,22 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 
 import javax.crypto.SecretKey;
 import java.time.temporal.ChronoUnit;
 
 @Component
-public class JwtConfig {
+public class TokenAuthConfig {
 
     @Value("${spring.jwt.issuer}")
     private String issuer;
 
     private SecretKey secretKey;
 
-    public JwtConfig(SecretKey secretKey) {
+    public TokenAuthConfig(SecretKey secretKey) {
         this.secretKey = secretKey;
     }
 
@@ -43,7 +45,7 @@ public class JwtConfig {
         try {
             return getClaims(token).getSubject();
         } catch (JwtException e) {
-            throw new RuntimeException("Invalid token", e);
+            throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "Invalid token");
         }
     }
 

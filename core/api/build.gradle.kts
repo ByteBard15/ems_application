@@ -20,4 +20,11 @@ dependencies {
     api(libs.spring.cloud.eureka.client)
     api(libs.spring.boot.starter.security)
     api(libs.jwt.core)
+    api(libs.spring.boot.starter.amqp)
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.h2.database)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }

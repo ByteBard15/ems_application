@@ -8,7 +8,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
-@Component
+@Component("authenticationEntryPoint")
 public class DelegatedAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private final HandlerExceptionResolver exceptionResolver;
 

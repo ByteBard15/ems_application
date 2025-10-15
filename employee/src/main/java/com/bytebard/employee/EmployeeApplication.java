@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication(
         scanBasePackages = {
                 "com.bytebard.core.api",
+                "com.bytebard.core.messaging",
                 "com.bytebard.employee"
         }
 )

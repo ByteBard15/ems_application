@@ -3,11 +3,12 @@ package com.bytebard.auth.service;
 import com.bytebard.auth.types.ChangePasswordRequest;
 import com.bytebard.auth.types.LoginRequest;
 import com.bytebard.auth.types.LoginResponse;
-import com.bytebard.core.api.config.JwtConfig;
+import com.bytebard.core.api.config.TokenAuthConfig;
 import com.bytebard.core.api.mappers.UserMapper;
 import com.bytebard.core.api.models.Status;
 import com.bytebard.core.api.repositories.UserRepository;
 import com.bytebard.core.api.security.JwtAuthenticationTokenProvider;
+import com.bytebard.core.api.validators.FieldValidator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,9 +27,9 @@ public class AuthService {
     private Long accessTokenExpiryInHours;
 
     private final JwtAuthenticationTokenProvider provider;
-    private final JwtConfig config;
+    private final TokenAuthConfig config;
 
-    public AuthService(JwtAuthenticationTokenProvider provider, JwtConfig config, PasswordEncoder passwordEncoder, UserRepository userRepository) {
+    public AuthService(JwtAuthenticationTokenProvider provider, TokenAuthConfig config, PasswordEncoder passwordEncoder, UserRepository userRepository) {
         this.provider = provider;
         this.config = config;
         this.passwordEncoder = passwordEncoder;
@@ -45,6 +46,9 @@ public class AuthService {
     }
 
     public void changePassword(ChangePasswordRequest request) {
+        if (!FieldValidator.isValidPassword(request.getNewPassword())) {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Invalid new password format");
+        }
         var user = this.provider.authenticate(request.getEmail(), request.getOldPassword());
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         if (!Objects.equals(user.getStatus(), Status.ACTIVE)) {

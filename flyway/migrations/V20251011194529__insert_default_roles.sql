@@ -4,7 +4,7 @@
 
 -- Write your SQL migration statements below
 
-INSERT INTO users (name)
-VALUES ('ADMIN'),
-       ('USER'),
-       ('MANAGER');
+INSERT INTO roles (name)
+VALUES ('role_admin'),
+       ('role_employee'),
+       ('role_manager');

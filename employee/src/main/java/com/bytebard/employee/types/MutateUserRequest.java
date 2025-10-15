@@ -5,7 +5,7 @@ public class MutateUserRequest {
     private String email;
     private String firstName;
     private String lastName;
-    private String userType;
+    private String role;
 
     public String getEmail() {
         return email;
@@ -31,11 +31,11 @@ public class MutateUserRequest {
         this.lastName = lastName;
     }
 
-    public String getUserType() {
-        return userType;
+    public String getRole() {
+        return role;
     }
 
-    public void setUserType(String userType) {
-        this.userType = userType;
+    public void setRole(String role) {
+        this.role = role;
     }
 }

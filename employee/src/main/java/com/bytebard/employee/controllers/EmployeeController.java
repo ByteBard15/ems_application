@@ -4,10 +4,14 @@ import com.bytebard.core.api.constants.Routes;
 import com.bytebard.core.api.types.ApiResponse;
 import com.bytebard.core.api.types.UserDTO;
 import com.bytebard.employee.services.EmployeeService;
+import com.bytebard.employee.types.DepartmentDTO;
 import com.bytebard.employee.types.MutateUserRequest;
+import jakarta.ws.rs.QueryParam;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RequestMapping(Routes.USERS)
 @RestController
@@ -35,5 +39,17 @@ public class EmployeeController {
     public ResponseEntity<ApiResponse<UserDTO>> get(@PathVariable("id") Long id) {
         var user = employeeService.getById(id);
         return ResponseEntity.ok(new ApiResponse<>(user, HttpStatus.OK, true));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Object>> delete(@PathVariable("id") Long id) {
+        employeeService.delete(id);
+        return ResponseEntity.ok(new ApiResponse<>(null, HttpStatus.OK, true));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<UserDTO>>> getAll(@QueryParam("page") Integer page, @QueryParam("size") Integer size) {
+        var users = employeeService.getAllUsers(page, size);
+        return ResponseEntity.ok(new ApiResponse<>(users, HttpStatus.OK, true));
     }
 }

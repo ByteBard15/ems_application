@@ -11,7 +11,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 
-@Component
+@Component("accessDeniedHandler")
 public class JsonAccessDeniedHandler implements AccessDeniedHandler {
     private final HandlerExceptionResolver exceptionResolver;
 

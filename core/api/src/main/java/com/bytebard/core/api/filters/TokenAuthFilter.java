@@ -1,9 +1,8 @@
 package com.bytebard.core.api.filters;
 
-import com.bytebard.core.api.config.JwtConfig;
+import com.bytebard.core.api.config.TokenAuthConfig;
 import com.bytebard.core.api.context.AuthContext;
 import com.bytebard.core.api.repositories.UserRepository;
-import com.bytebard.core.api.security.JwtAuthenticationToken;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,14 +15,14 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 
-public class JwtAuthFilter extends OncePerRequestFilter {
+public class TokenAuthFilter extends OncePerRequestFilter {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final JwtConfig config;
+    private final TokenAuthConfig config;
     private final AuthContext authContext;
     private final UserRepository userRepository;
     private final HandlerExceptionResolver exceptionResolver;
 
-    public JwtAuthFilter(JwtConfig config, AuthContext authContext, UserRepository userRepository, HandlerExceptionResolver exceptionResolver) {
+    public TokenAuthFilter(TokenAuthConfig config, AuthContext authContext, UserRepository userRepository, HandlerExceptionResolver exceptionResolver) {
         this.config = config;
         this.authContext = authContext;
         this.userRepository = userRepository;

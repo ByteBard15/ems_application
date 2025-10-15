@@ -18,12 +18,24 @@ public class PropertyUtils {
 
         p.setProperty("LOG_LEVEL", "INFO");
         p.setProperty("DB_POOL_SIZE", "10");
+
         p.setProperty("GATEWAY_SERVICE_PORT", "8080");
         p.setProperty("AUTH_SERVICE_PORT", "8081");
         p.setProperty("EMPLOYEE_SERVICE_PORT", "8082");
         p.setProperty("DISCOVERY_SERVICE_PORT", "8761");
         p.setProperty("DEFAULT_PASSWORD", randomHex(16));
         p.setProperty("DISCOVERY_SERVICE_URL", "http://localhost:8761");
+
+        p.setProperty("RABBITMQ_HOST", "localhost");
+        p.setProperty("RABBITMQ_PORT", "5672");
+        p.setProperty("RABBITMQ_USERNAME", "admin");
+        p.setProperty("RABBITMQ_PASSWORD", "admin123");
+        p.setProperty("RABBITMQ_VIRTUAL_HOST", "/");
+
+        p.setProperty("RABBITMQ_USER_EVENTS_QUEUE", "user.events.queue");
+        p.setProperty("RABBITMQ_DL_EVENTS_QUEUE", "dl.queue");
+        p.setProperty("RABBITMQ_MAIN_EXCHANGE", "main.exchange");
+        p.setProperty("RABBITMQ_DL_EXCHANGE", "dlx.exchange");
         return p;
     }
 

@@ -14,5 +14,12 @@ dependencyManagement {
 
 dependencies {
     implementation(project(":core:api"))
+    implementation(project(":core:messaging"))
     implementation(libs.spring.cloud.starter.config)
+    testImplementation(libs.spring.security.test)
+    testImplementation(libs.spring.boot.starter.test)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }

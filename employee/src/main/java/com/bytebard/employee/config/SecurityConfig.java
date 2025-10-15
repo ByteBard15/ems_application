@@ -1,7 +1,7 @@
 package com.bytebard.employee.config;
 
 import com.bytebard.core.api.constants.Routes;
-import com.bytebard.core.api.filters.JwtAuthFilter;
+import com.bytebard.core.api.filters.TokenAuthFilter;
 import com.bytebard.core.api.models.Role;
 import com.bytebard.core.api.security.DelegatedAuthenticationEntryPoint;
 import com.bytebard.core.api.security.JsonAccessDeniedHandler;
@@ -16,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -24,10 +25,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtAuthFilter filter,
-            DelegatedAuthenticationEntryPoint entryPoint,
+            @Qualifier("tokenAuthFilter") OncePerRequestFilter filter,
+            @Qualifier("authenticationEntryPoint") DelegatedAuthenticationEntryPoint entryPoint,
             @Qualifier("corsConfigurationSource") CorsConfigurationSource source,
-            JsonAccessDeniedHandler deniedHandler
+            @Qualifier("accessDeniedHandler") JsonAccessDeniedHandler deniedHandler
     ) throws Exception {
         http.httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
@@ -41,6 +42,9 @@ public class SecurityConfig {
                         .requestMatchers(String.format("%s%s/**", Routes.API_V1, Routes.DEPARTMENTS)).hasRole(Role.ADMIN)
                         .requestMatchers(HttpMethod.POST, String.format("%s%s", Routes.API_V1, Routes.USERS)).hasRole(Role.ADMIN)
                         .requestMatchers(HttpMethod.PUT, String.format("%s%s", Routes.API_V1, Routes.USERS)).hasRole(Role.ADMIN)
+                        .requestMatchers(HttpMethod.DELETE, String.format("%s%s", Routes.API_V1, Routes.USERS)).hasRole(Role.ADMIN)
+                        .requestMatchers(HttpMethod.GET, String.format("%s%s", Routes.API_V1, Routes.USERS)).hasAnyRole(Role.ADMIN, Role.MANAGER)
+//                        .requestMatchers(HttpMethod.GET, String.format("%s%s/**", Routes.API_V1, Routes.USERS)).hasAnyRole(Role.ADMIN, Role.MANAGER, Role.EMPLOYEE)
                         .anyRequest()
                         .authenticated()
                 ).exceptionHandling(e -> e

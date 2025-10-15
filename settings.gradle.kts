@@ -10,6 +10,6 @@ include(
     ":flyway",
     ":core:api",
     ":core:utils",
-    ":core:testing",
+    ":core:messaging",
     ":employee",
 )

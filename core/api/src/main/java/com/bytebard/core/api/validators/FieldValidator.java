@@ -14,14 +14,14 @@ public class FieldValidator {
     );
 
     public static boolean isValidEmail(String email) {
-        if (StringUtils.hasText(email)) {
+        if (!StringUtils.hasText(email)) {
             return false;
         }
         return EMAIL_PATTERN.matcher(email).matches();
     }
 
     public static boolean isValidPassword(String password) {
-        if (StringUtils.hasText(password)) {
+        if (!StringUtils.hasText(password)) {
             return false;
         }
         return PASSWORD_PATTERN.matcher(password).matches();

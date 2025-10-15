@@ -13,6 +13,7 @@ dependencyManagement {
 }
 
 dependencies {
+    implementation(project(":core:messaging"))
     implementation(libs.spring.cloud.config.server)
     implementation(libs.spring.boot.starter.web)
 }

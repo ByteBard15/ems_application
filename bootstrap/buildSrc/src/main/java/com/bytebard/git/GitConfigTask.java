@@ -10,10 +10,7 @@ import org.gradle.api.tasks.*;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -95,7 +92,8 @@ public abstract class GitConfigTask extends DefaultTask {
             File localDir = new File(getProject().getBuildDir(), repoName);
             if (localDir.exists()) {
                 boolean deleted = deleteRecursively(localDir);
-                if (!deleted) getLogger().warn("Could not fully delete existing local dir: " + localDir.getAbsolutePath());
+                if (!deleted)
+                    getLogger().warn("Could not fully delete existing local dir: " + localDir.getAbsolutePath());
             }
             if (!localDir.mkdirs()) {
                 getLogger().lifecycle("Local directory created/exists: " + localDir.getAbsolutePath());
@@ -143,112 +141,199 @@ public abstract class GitConfigTask extends DefaultTask {
             m.put(name, props.getProperty(name));
         }
 
-        // application.yml
+        writeApplicationYaml(dir, yaml, m);
+        writeAuthServiceYaml(dir, yaml, m);
+        writeGatewayServiceYaml(dir, yaml, m);
+        writeEmployeeServiceYaml(dir, yaml, m);
+        writeDiscoveryServiceYaml(dir, yaml, m);
+    }
+
+    private void writeApplicationYaml(File dir, Yaml yaml, Map<String, String> m) throws Exception {
         Map<String, Object> application = new LinkedHashMap<>();
+
         Map<String, Object> server = Map.of("shutdown", "graceful");
         application.put("server", server);
+
+        Map<String, Object> rabbitmq = Map.of(
+                "host", m.get("RABBITMQ_HOST"),
+                "port", m.get("RABBITMQ_PORT"),
+                "username", m.get("RABBITMQ_USERNAME"),
+                "password", m.get("RABBITMQ_PASSWORD"),
+                "virtual-host", m.get("RABBITMQ_VIRTUAL_HOST"),
+                "queues", Map.of(
+                        "user-events", m.get("RABBITMQ_USER_EVENTS_QUEUE"),
+                        "dl-events", m.get("RABBITMQ_DL_EVENTS_QUEUE")
+                ),
+                "exchanges", Map.of(
+                        "main", m.get("RABBITMQ_MAIN_EXCHANGE"),
+                        "dlx", m.get("RABBITMQ_DL_EXCHANGE")
+                ),
+                "listeners", Map.of("enabled", "true")
+        );
+
         Map<String, Object> spring = new LinkedHashMap<>();
         spring.put("application", Map.of("name", "global-config"));
         spring.put("profiles", Map.of("active", "dev"));
+        spring.put("rabbitmq", rabbitmq);
+
         application.put("spring", spring);
-        Map<String,Object> logging = Map.of("level", Map.of("root", m.getOrDefault("LOG_LEVEL","INFO")));
-        application.put("logging", logging);
-        Map<String,Object> management = Map.of("endpoints", Map.of("web", Map.of("exposure", Map.of("include", "health,info"))));
-        application.put("management", management);
+        application.put("logging", Map.of(
+                "level", Map.of(
+                        "root", m.getOrDefault("LOG_LEVEL", "INFO"),
+                        "org.springframework.cloud.gateway", "TRACE",
+                        "org.springframework.cloud.loadbalancer", "TRACE"
+                )
+        ));
+        application.put("management",
+                Map.of("endpoints", Map.of("web", Map.of("exposure", Map.of("include", "health,info"))))
+        );
 
-        File appFile = new File(dir, "application.yml");
-        try (OutputStream out = new FileOutputStream(appFile)) {
-            yaml.dump(application, new java.io.OutputStreamWriter(out, StandardCharsets.UTF_8));
-        }
+        writeYamlFile(dir, "application.yml", yaml, application);
+    }
 
-        // auth-service.yml
-        Map<String,Object> auth = new LinkedHashMap<>();
+    private void writeAuthServiceYaml(File dir, Yaml yaml, Map<String, String> m) throws Exception {
+        Map<String, Object> auth = new LinkedHashMap<>();
+
         auth.put("server", Map.of("port", Integer.parseInt(m.getOrDefault("AUTH_SERVICE_PORT", "8081"))));
-        Map<String,Object> authSpring = new LinkedHashMap<>();
-        authSpring.put("application", Map.of("name", "auth-service"));
 
-        Map<String,Object> datasource = new LinkedHashMap<>();
-        datasource.put("driver-class-name", "org.postgresql.Driver");
-        datasource.put("username", m.get("DB_USERNAME"));
-        datasource.put("password", m.get("DB_PASSWORD"));
-        var url = String.format("jdbc:postgresql://%s:%s/%s", m.get("DB_HOST"), m.get("DB_PORT"), m.get("DB_NAME"));
-        datasource.put("url", url);
-        Map<String,Object> hikari = new LinkedHashMap<>();
-        hikari.put("maximum-pool-size", Integer.parseInt(m.getOrDefault("DB_POOL_SIZE", "10")));
-        datasource.put("hikari", hikari);
-
-        Map<String,Object> jpa = new LinkedHashMap<>();
-        jpa.put("hibernate", Map.of("ddl-auto", "none", "show-sql", true, "database-platform", "org.hibernate.dialect.PostgreSQLDialect"));
-
-        authSpring.put("datasource", datasource);
-        authSpring.put("jpa", jpa);
-        authSpring.put("jwt", Map.of(
-                "secret",
-                m.get("JWT_SECRET"),
-                "expiry-in-hours",
-                m.get("JWT_EXPIRATION_IN_HOURS"),
-                "issuer",
-                m.get("JWT_ISSUER"))
+        Map<String, Object> datasource = Map.of(
+                "driver-class-name", "org.postgresql.Driver",
+                "username", m.get("DB_USERNAME"),
+                "password", m.get("DB_PASSWORD"),
+                "url", String.format("jdbc:postgresql://%s:%s/%s", m.get("DB_HOST"), m.get("DB_PORT"), m.get("DB_NAME")),
+                "hikari", Map.of("maximum-pool-size", Integer.parseInt(m.getOrDefault("DB_POOL_SIZE", "10")))
         );
-        auth.put("spring", authSpring);
 
-
-        auth.put("eureka", Map.of("client", Map.of("service-url", Map.of("defaultZone", m.getOrDefault("DISCOVERY_SERVICE_URL","http://localhost:8761") + "/eureka/"))));
-
-        try (OutputStream out = new FileOutputStream(new File(dir, "auth-service.yml"))) {
-            yaml.dump(auth, new java.io.OutputStreamWriter(out, StandardCharsets.UTF_8));
-        }
-
-        // gateway-service.yml
-        Map<String,Object> gateway = new LinkedHashMap<>();
-        gateway.put("server", Map.of("port", Integer.parseInt(m.getOrDefault("GATEWAY_SERVICE_PORT", "8080"))));
-        Map<String,Object> gatewaySpring = new LinkedHashMap<>();
-        gatewaySpring.put("application", Map.of("name", "gateway-service"));
-        gatewaySpring.put("cloud", Map.of("gateway", Map.of("routes", List.of(
-                Map.of("id","employee","uri","lb://employee-service","predicates", List.of("Path=/employee/**")),
-                Map.of("id","auth","uri","lb://auth-service","predicates", List.of("Path=/auth/**"))
-        ))));
-        gateway.put("spring", gatewaySpring);
-        gateway.put("eureka", Map.of("client", Map.of("service-url", Map.of("defaultZone", "http://localhost:8761/eureka/"))));
-        try (OutputStream out = new FileOutputStream(new File(dir, "gateway-service.yml"))) {
-            yaml.dump(gateway, new java.io.OutputStreamWriter(out, StandardCharsets.UTF_8));
-        }
-
-        // employee-service.yml
-        Map<String,Object> emp = new LinkedHashMap<>();
-        emp.put("server", Map.of("port", 8082));
-        Map<String,Object> empSpring = new LinkedHashMap<>();
-        empSpring.put("application", Map.of("name", "employee-service"));
-
-        empSpring.put("datasource", datasource);
-        empSpring.put("jpa", jpa);
-        empSpring.put("jwt", Map.of(
-                "secret",
-                m.get("JWT_SECRET"),
-                "expiry-in-hours",
-                m.get("JWT_EXPIRATION_IN_HOURS"),
-                "issuer",
-                m.get("JWT_ISSUER"))
-        );
-        empSpring.put("auth", Map.of("default-password", m.get("DEFAULT_PASSWORD")));
-        emp.put("spring", empSpring);
-        emp.put("eureka", Map.of("client", Map.of("service-url", Map.of("defaultZone","http://localhost:8761/eureka/"))));
-        try (OutputStream out = new FileOutputStream(new File(dir, "employee-service.yml"))) {
-            yaml.dump(emp, new java.io.OutputStreamWriter(out, StandardCharsets.UTF_8));
-        }
-
-        // discovery-service.yml
-        Map<String,Object> disc = new LinkedHashMap<>();
-        disc.put("server", Map.of("port", m.get("DISCOVERY_SERVICE_PORT")));
-        disc.put("spring",
-                Map.of(
-                        "application",
-                        Map.of("name", "discovery-service")
+        Map<String, Object> jpa = Map.of(
+                "hibernate", Map.of(
+                        "ddl-auto", "none",
+                        "show-sql", true,
+                        "database-platform", "org.hibernate.dialect.PostgreSQLDialect"
                 )
         );
+
+        Map<String, Object> spring = Map.of(
+                "application", Map.of("name", "auth-service"),
+                "datasource", datasource,
+                "jpa", jpa,
+                "jwt", Map.of(
+                        "secret", m.get("JWT_SECRET"),
+                        "expiry-in-hours", m.get("JWT_EXPIRATION_IN_HOURS"),
+                        "issuer", m.get("JWT_ISSUER")
+                )
+        );
+
+        auth.put("spring", spring);
+        auth.put("eureka", Map.of("client", Map.of("service-url", Map.of("defaultZone", m.getOrDefault("DISCOVERY_SERVICE_URL", "http://localhost:8761/eureka/")))));
+
+        writeYamlFile(dir, "auth-service.yml", yaml, auth);
+    }
+
+    private void writeGatewayServiceYaml(File dir, Yaml yaml, Map<String, String> m) throws Exception {
+        Map<String, Object> root = new LinkedHashMap<>();
+
+        root.put("server", Map.of("port", Integer.parseInt(m.getOrDefault("GATEWAY_SERVICE_PORT", "8080"))));
+
+        Map<String, Object> spring = new LinkedHashMap<>();
+        spring.put("application", Map.of("name", "gateway-service"));
+        spring.put("main", Map.of("web-application-type", "reactive"));
+
+        List<Map<String, Object>> routes = List.of(
+                Map.of(
+                        "predicates", List.of("Path=/api/v1/users/**"),
+                        "uri", "lb://employee-service",
+                        "id", "users"
+                ),
+                Map.of(
+                        "predicates", List.of("Path=/api/v1/departments/**"),
+                        "uri", "lb://employee-service",
+                        "id", "departments"
+                ),
+                Map.of(
+                        "predicates", List.of("Path=/api/v1/auth/**"),
+                        "uri", "lb://auth-service",
+                        "id", "auth"
+                )
+        );
+
+        Map<String, Object> webflux = Map.of("routes", routes);
+        Map<String, Object> serverUnderGateway = Map.of("webflux", webflux);
+        Map<String, Object> gateway = new LinkedHashMap<>();
+        gateway.put("server", serverUnderGateway);
+
+        gateway.put("discovery", Map.of("locator", Map.of("enabled", true, "lower-case-service-id", true)));
+
+        Map<String, Object> cloud = Map.of("gateway", gateway);
+        spring.put("cloud", cloud);
+
+        root.put("spring", spring);
+
+        root.put("eureka", Map.of(
+                "client", Map.of(
+                        "service-url", Map.of("defaultZone", "http://localhost:8761/eureka/")
+                )
+        ));
+
+        root.put("management", Map.of(
+                "endpoint", Map.of("gateway", Map.of("access", "unrestricted"))
+        ));
+
+        writeYamlFile(dir, "gateway-service.yml", yaml, root);
+    }
+
+    private void writeEmployeeServiceYaml(File dir, Yaml yaml, Map<String, String> m) throws Exception {
+        Map<String, Object> emp = new LinkedHashMap<>();
+
+        emp.put("server", Map.of("port", Integer.parseInt(m.getOrDefault("EMPLOYEE_SERVICE_PORT", "8082"))));
+
+        Map<String, Object> datasource = Map.of(
+                "driver-class-name", "org.postgresql.Driver",
+                "username", m.get("DB_USERNAME"),
+                "password", m.get("DB_PASSWORD"),
+                "url", String.format("jdbc:postgresql://%s:%s/%s", m.get("DB_HOST"), m.get("DB_PORT"), m.get("DB_NAME"))
+        );
+
+        Map<String, Object> jpa = Map.of(
+                "hibernate", Map.of(
+                        "ddl-auto", "none",
+                        "show-sql", true,
+                        "database-platform", "org.hibernate.dialect.PostgreSQLDialect"
+                )
+        );
+
+        Map<String, Object> spring = Map.of(
+                "application", Map.of("name", "employee-service"),
+                "rabbitmq", Map.of("listeners", Map.of("enabled", "false")),
+                "datasource", datasource,
+                "jpa", jpa,
+                "jwt", Map.of(
+                        "secret", m.get("JWT_SECRET"),
+                        "expiry-in-hours", m.get("JWT_EXPIRATION_IN_HOURS"),
+                        "issuer", m.get("JWT_ISSUER")
+                ),
+                "auth", Map.of("default-password", m.get("DEFAULT_PASSWORD"))
+        );
+
+        emp.put("spring", spring);
+        emp.put("eureka", Map.of("client", Map.of("service-url", Map.of("defaultZone", "http://localhost:8761/eureka/"))));
+
+        writeYamlFile(dir, "employee-service.yml", yaml, emp);
+    }
+
+    private void writeDiscoveryServiceYaml(File dir, Yaml yaml, Map<String, String> m) throws Exception {
+        Map<String, Object> disc = new LinkedHashMap<>();
+
+        disc.put("server", Map.of("port", m.get("DISCOVERY_SERVICE_PORT")));
+        disc.put("spring", Map.of("application", Map.of("name", "discovery-service")));
         disc.put("eureka", Map.of("client", Map.of("register-with-eureka", false, "fetch-registry", false)));
-        try (OutputStream out = new FileOutputStream(new File(dir, "discovery-service.yml"))) {
-            yaml.dump(disc, new java.io.OutputStreamWriter(out, StandardCharsets.UTF_8));
+
+        writeYamlFile(dir, "discovery-service.yml", yaml, disc);
+    }
+
+    private void writeYamlFile(File dir, String filename, Yaml yaml, Map<String, Object> data) throws Exception {
+        File outFile = new File(dir, filename);
+        try (OutputStream out = new FileOutputStream(outFile)) {
+            yaml.dump(data, new OutputStreamWriter(out, StandardCharsets.UTF_8));
         }
     }
 

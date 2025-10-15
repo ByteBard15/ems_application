@@ -3,6 +3,8 @@ package com.bytebard.core.api.repositories;
 import com.bytebard.core.api.models.Role;
 import com.bytebard.core.api.models.User;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -33,19 +35,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query(value = """
         SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
-        FROM user_departments ud1
-        JOIN user_departments ud2 ON ud1.department_id = ud2.department_id
-        WHERE ud1.user_id = :empId
-          AND ud2.user_id = :managerId
-          AND ud1.department_id = ud2.department_id
-    """, nativeQuery = true)
-    boolean hasAccessToUser(
-            @Param("empId") Long empId,
-            @Param("managerId") Long managerId
-    );
-
-    @Query(value = """
-        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE ELSE FALSE END
         FROM users u JOIN user_roles ur ON u.id = ur.user_id
         JOIN roles r ON ur.role_id = r.id
         WHERE u.email = :email
@@ -55,6 +44,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("email") String email,
             @Param("roleName") String roleName
     );
+
+    boolean existsByEmail(String email);
+
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.email = :email AND u.id <> :userId")
+    boolean existsByEmail(@Param("email") String email, @Param("userId") Long excludeUserId);
 
     @Modifying
     @Transactional
@@ -76,4 +70,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @EntityGraph(attributePaths = "roles")
     Optional<User> findWithRolesById(Long id);
+
+    @Query(
+            value = "SELECT DISTINCT u.* " +
+                    "FROM users u " +
+                    "LEFT JOIN user_departments ud ON u.id = ud.user_id " +
+                    "LEFT JOIN departments d ON ud.department_id = d.id " +
+                    "LEFT JOIN user_departments ud2 ON d.id = ud2.department_id " +
+                    "WHERE ud2.user_id = :managerId",
+            countQuery = "SELECT COUNT(DISTINCT u.id) " +
+                    "FROM users u " +
+                    "LEFT JOIN user_departments ud ON u.id = ud.user_id " +
+                    "LEFT JOIN departments d ON ud.department_id = d.id " +
+                    "LEFT JOIN user_departments ud2 ON d.id = ud2.department_id " +
+                    "WHERE ud2.user_id = :managerId",
+            nativeQuery = true
+    )
+    Page<User> findUsersInSameDepartmentsAsManager(@Param("managerId") Long managerId, Pageable pageable);
 }
