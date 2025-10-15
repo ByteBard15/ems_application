@@ -11,7 +11,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-@CacheableTask
 public abstract class GitAdminTask extends DefaultTask {
     private String containerName;
 

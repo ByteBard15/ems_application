@@ -14,7 +14,6 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-@CacheableTask
 public abstract class GitConfigTask extends DefaultTask {
     private String username;
 
